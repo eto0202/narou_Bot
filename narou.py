@@ -107,13 +107,14 @@ async def on_message(message):
                 for rp in search_data.find_all('rp', src = False):
                     rp.decompose()
                 text_data = search_data.find("div",id="novel_honbun")
-                string = str(text_data).getText()
+                print(text_data)
+                print(text_data.getText())
+                time.sleep(1)
+                string = text_data.getText()
                 file_name = title + '.txt'
                 with tempfile.TemporaryDirectory() as tmp:
                     with open(tmp + '/' + file_name, 'w+') as file:
                         file.write(string)
                     await client.send_file(message.channel, tmp + '/' + file_name, content = title + msg[-1] + '話')
-        else :
-            print('None')
 
 client.run("NDYxNTQ4NzY5MjE4MDAyOTY0.DtR64w.TjIAJjGADcmJZWnP4qBfX1ea_FE")
