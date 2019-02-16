@@ -102,6 +102,7 @@ async def on_message(message):
                 print(target_url)
                 request = requests.get(target_url)
                 search_data = BeautifulSoup(request.content, 'html.parser')
+                print(search_data)
                 for rt in search_data.find_all('rt', src = False):
                     rt.decompose()
                 for rp in search_data.find_all('rp', src = False):
