@@ -101,14 +101,13 @@ async def on_message(message):
                 target_url = link + msg[-1] + '/'
                 print(target_url)
                 request = requests.get(target_url)
-                search_data = BeautifulSoup(request.content, 'lxml')
+                search_data = BeautifulSoup(request.content, 'html.parser')
                 for rt in search_data.find_all('rt', src = False):
                     rt.decompose()
                 for rp in search_data.find_all('rp', src = False):
                     rp.decompose()
                 text_data = search_data.find("div",id="novel_honbun")
                 print(text_data)
-                print(text_data.getText())
                 time.sleep(1)
                 string = text_data.getText()
                 file_name = title + '.txt'
