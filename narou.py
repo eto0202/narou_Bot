@@ -100,8 +100,7 @@ async def on_message(message):
                         link = "http://ncode.syosetu.com/{}/".format(ncode.lower())
                 target_url = link + msg[-1] + '/'
                 print(target_url)
-                headers = { "User-Agent" :  "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)" }
-                request = requests.get(target_url, headers=headers)
+                request = requests.get(target_url)
                 search_data = BeautifulSoup(request.content, 'lxml')
                 print(search_data)
                 for rt in search_data.find_all('rt', src = False):
