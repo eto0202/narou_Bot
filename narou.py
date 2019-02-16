@@ -101,7 +101,7 @@ async def on_message(message):
                 target_url = link + msg[-1] + '/'
                 print(target_url)
                 request = requests.get(target_url)
-                search_data = bs4.BeautifulSoup(request.content, 'lxml')
+                search_data = BeautifulSoup(request.content, 'lxml')
                 for rt in search_data.find_all('rt', src = False):
                     rt.decompose()
                 for rp in search_data.find_all('rp', src = False):
