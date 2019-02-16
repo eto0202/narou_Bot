@@ -107,7 +107,7 @@ async def on_message(message):
                 for rp in search_data.find_all('rp', src = False):
                     rp.decompose()
                 text_data = search_data.find("div",id="novel_honbun")
-                string = text_data.getText()
+                string = str(text_data).getText()
                 file_name = title + '.txt'
                 with tempfile.TemporaryDirectory() as tmp:
                     with open(tmp + '/' + file_name, 'w+') as file:
