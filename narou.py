@@ -100,8 +100,9 @@ async def on_message(message):
                         link = "http://ncode.syosetu.com/{}/".format(ncode.lower())
                 target_url = link + msg[-1] + '/'
                 print(target_url)
-                request = requests.get(target_url)
-                search_data = BeautifulSoup(request.content, 'html.parser')
+                headers = { "User-Agent" :  "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)" }
+                request = requests.get(target_url, headers=headers)
+                search_data = BeautifulSoup(request.content, 'lxml')
                 print(search_data)
                 for rt in search_data.find_all('rt', src = False):
                     rt.decompose()
@@ -109,6 +110,12 @@ async def on_message(message):
                     rp.decompose()
                 text_data = search_data.find("div",id="novel_honbun")
                 print(text_data)
-
+                time.sleep(1)
+                string = text_data.getText()
+                file_name = title + '.txt'
+                with tempfile.TemporaryDirectory() as tmp:
+                    with open(tmp + '/' + file_name, 'w+') as file:
+                        file.write(string)
+                    await client.send_file(message.channel, tmp + '/' + file_name, content = title + msg[-1] + '話')
 
 client.run("NDYxNTQ4NzY5MjE4MDAyOTY0.DtR64w.TjIAJjGADcmJZWnP4qBfX1ea_FE")
