@@ -81,5 +81,5 @@ async def kisaragi(ctx):
 
 
 
-#DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN')
-client.run("NDYxNTQ4NzY5MjE4MDAyOTY0.DtR64w.TjIAJjGADcmJZWnP4qBfX1ea_FE")
+DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN')
+client.run(DISCORD_TOKEN)
