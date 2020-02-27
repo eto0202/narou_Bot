@@ -1,19 +1,15 @@
 import requests
-import time
 from bs4 import BeautifulSoup
-import bs4
 import discord
 from discord.ext import commands
-import json
-from urllib.request import urlopen
 import gzip
-import urllib.parse
-from datetime import datetime
 from lxml import html
-import chardet
-import re
-import tempfile
-
+import urllib
+from urllib.request import urlopen
+import urllib.parse
+import gzip
+import json
+import os
 
 client = commands.Bot(command_prefix='!')
 
@@ -21,100 +17,84 @@ client = commands.Bot(command_prefix='!')
 async def on_ready():
     print('ログインしました')
 
+client.remove_command('help')
 @client.command()
-async def command():
-    msg = discord.Embed(title= 'ヘルプ', description= '**作品検索**\n!narou 作品名\n\n**R18作品検索**\n!r18 作品名\n\n**外国語検索**\n!babel 単語',colour=0x546e7a)
+async def help():
+    embed = discord.Embed(title='なろうbot', description='※現在開発中')
+    embed.add_field(name='コマンド一覧', value='**!kisaragi 作品名**\n\n' + '作品のアクセス解析を表示します。単語のみの場合、その単語のランキング1位が表示されます。', inline= False)
+    await client.say(embed=embed)
+
+@client.command()
+async def kisaragi(ctx):
+    #ncodeに変換
+    url = "http://api.syosetu.com/novelapi/api/?out=json&lim=3&word=" + str(ctx) + "&title=1&wname=1&order=hyoka&of=t-n-w-s"
+    response = requests.get(url)
+    print(response)
+    mylist = []
+    j_date = response.json()
+    for novel in j_date[1:]:
+        n = novel['ncode']
+        mylist.append(n)
+    #kisaragiでスクレイピング
+    kisaragi = "https://kasasagi.hinaproject.com/access/top/ncode/" + mylist[0] + "/"
+    k_date = requests.get(str(kisaragi))
+    print(k_date)
+    soup = BeautifulSoup(k_date.content, "html.parser")
+    t_date = soup.select("#title")
+    td = soup.select("td.right")
+    for text in t_date:
+        title = text.text
+    td_list = []
+    for a_txt in td:
+        a = a_txt.text
+        td_list.append(a.replace('アクセス', ''))
+    #整形
+    d = ['小計', td_list[0], 'パソコン', td_list[1], '携帯', td_list[2], 'スマホ', td_list[3]]
+    y = ['小計', td_list[4], 'パソコン', td_list[5], '携帯', td_list[6], 'スマホ', td_list[7]]
+    t = ['累計', td_list[8], td_list[9], 'パソコン', td_list[10], td_list[11], '携帯', td_list[12], td_list[13], 'スマホ', td_list[14], td_list[15]]
+
+    msg = discord.Embed(title= title, description='**◆本日のデータ**\n' + \
+              '小説全体' + '　　　' + 'PV\n\n' + \
+              d[0] + '　　　　' + d[1] + '\n' + \
+              d[2] + '　　' + d[3] + '\n' + \
+              d[4] + '　　　　' + d[5] + '\n' + \
+              d[6] + '　　　' + d[7] + '\n', colour=0x546e7a
+              )
+    field_1 = '**◆昨日のデータ**\n' + \
+              '小説全体' + '　　　' + 'PV\n\n' + \
+              y[0] + '　　　　' + y[1] + '\n' + \
+              y[2] + '　　' + y[3] + '\n' + \
+              y[4] + '　　　　' + y[5] + '\n' + \
+              y[6] + '　　　' + y[7] + '\n'
+
+    field_2 = '**◆総合・ユニーク**\n' + \
+              '小説全体' + '　　　　PV' + '　　　　　　　　　ユニーク\n\n' + \
+              t[0] + '　　　　' + t[1] + '　　　　　' + t[2] + '\n' + \
+              t[3] + '　　' + t[4] + '　　　　　　' + t[5] +'\n' + \
+              t[6] + '　　　　' + t[7] + '　　　　　　' + t[8] +'\n' + \
+              t[9] + '　　　' + t[10] + '　　　　　　' + t[11] + '\n\n\n' + \
+              'リンク\n' + kisaragi
+
+    msg.add_field(name= '-----------------------------------------------', value= field_1, inline= False)
+    msg.add_field(name= '-----------------------------------------------', value= field_2, inline= False)
     await client.say(embed=msg)
 
-@client.command()
-async def narou(ctx):
-    s_quote = urllib.parse.quote(ctx)
-    url = "http://api.syosetu.com/novelapi/api/?out=json&lim=3&word=" + s_quote + "&title=1&wname=1&order=hyoka&of=t-n-w-s&gzip=5"
-    response = urlopen(url)
-    with gzip.open(response,"rt",encoding="utf-8") as f:
-        j_raw = f.read()
-        jObj = json.loads(j_raw)
-        for a_novel in jObj[1:]:
-            title = a_novel['title']
-            writer = a_novel['writer']
-            story = a_novel['story']
-            ncode = a_novel['ncode']
-            link = "http://ncode.syosetu.com/{}/".format(ncode.lower())
-            msg = discord.Embed(title= title, description= '\n\n' + link + '\n\n' '作：' + writer + '\n\n' + story + '\n',colour=0x546e7a)
-            await client.say(embed=msg)
+
+
+NAROU_TOKEN = os.environ.get("NAROU_TOKEN")
+client.run(NAROU_TOKEN)
 
 
 
-@client.command()
-async def r18(ctx):
-    s_quote = urllib.parse.quote(ctx)
-    url = "http://api.syosetu.com/novel18api/api/?out=json&lim=3&word=" + s_quote + "&title=1&order=hyoka&of=t-n-w-s&gzip=5"
-    response = urlopen(url)
-    with gzip.open(response,"rt",encoding="utf-8") as f:
-        j_raw = f.read()
-        jObj = json.loads(j_raw)
-        for a_novel in jObj[1:]:
-            title = a_novel['title']
-            writer = a_novel['writer']
-            story = a_novel['story']
-            ncode = a_novel['ncode']
-            link = "http://ncode.syosetu.com/{}/".format(ncode.lower())
-            msg = discord.Embed(title= title, description= '\n\n' + link + '\n\n' '作：' + writer + '\n\n' + story + '\n',colour=0x546e7a)
-            await client.say(embed=msg)
 
-@client.command()
-async def babel(ctx):
-    s_quote = urllib.parse.quote(ctx, encoding= 'euc-jp')
-    url = "http://www.tekiro.main.jp/?search=" + s_quote
-    r = requests.get(url)
-    soup = BeautifulSoup(r.text, 'lxml')
-    title = soup.find('div', class_= 'entry_title')
-    content = soup.find('div', class_= 'jgm_entry_desc_mark')
-    try:
-        msg = discord.Embed(title= 'BABEL～世界の言葉～', description= title.getText() + '\n' + ' ' + content.getText().replace('Tweet', '') + '\n他の検索結果も見る\n' + url, colour=0x546e7a)
-        await client.say(embed=msg)
-    except AttributeError:
-        msg = discord.Embed(title= 'BABEL～世界の言葉～', description='検索結果が存在しません！',colour=0x546e7a)
-        await client.say(embed=msg)
 
-@client.event
-async def on_message(message):
-    if client.user != message.author:
-        msg = message.content.split(' ')
-        if msg[0] == '!read':
-            print(msg)
-            print(len(msg))
-            if len(msg) == 2:
-                await client.send_message(message.channel, message.author.mention + ' こいつコマンド間違ってるんだがｗｗｗｗｗｗｗアホ過ぎｗｗｗｗｗｗｗ')
-            elif len(msg) >= 3:
-                s_quote = urllib.parse.quote(msg[1])
-                url = "http://api.syosetu.com/novelapi/api/?out=json&lim=1&word=" + s_quote + "&title=1&wname=1&order=hyoka&of=t-n-w-s&gzip=5"
-                print(url)
-                response = urlopen(url)
-                with gzip.open(response,"rt",encoding="utf-8") as f:
-                    j_raw = f.read()
-                    jObj = json.loads(j_raw)
-                    for a_novel in jObj[1:]:
-                        title = a_novel['title']
-                        ncode = a_novel['ncode']
-                        link = "http://ncode.syosetu.com/{}/".format(ncode.lower())
-                target_url = link + msg[-1] + '/'
-                print(target_url)
-                request = requests.get(target_url)
-                search_data = BeautifulSoup(request.content, 'lxml')
-                print(search_data)
-                for rt in search_data.find_all('rt', src = False):
-                    rt.decompose()
-                for rp in search_data.find_all('rp', src = False):
-                    rp.decompose()
-                text_data = search_data.find("div",id="novel_honbun")
-                print(text_data)
-                time.sleep(1)
-                string = text_data.getText()
-                file_name = title + '.txt'
-                with tempfile.TemporaryDirectory() as tmp:
-                    with open(tmp + '/' + file_name, 'w+') as file:
-                        file.write(string)
-                    await client.send_file(message.channel, tmp + '/' + file_name, content = title + msg[-1] + '話')
+
+
+
+
+
+
+
+
 
 client.run("NDYxNTQ4NzY5MjE4MDAyOTY0.DtR64w.TjIAJjGADcmJZWnP4qBfX1ea_FE")
